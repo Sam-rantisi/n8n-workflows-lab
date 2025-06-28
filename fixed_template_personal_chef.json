@@ -1,0 +1,32 @@
+{
+  "name": "Fixed Personal Chef",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "GPT Suggestion",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "functionCode": "\nconst lines = $json.message.content.split(\"\\n\").filter(line => line.includes(\":\"));\nlet quick = \"\", gourmet = \"\";\nfor (const line of lines) {\n    if (line.toLowerCase().includes(\"quick\")) quick = line.split(\":\")[1]?.trim();\n    if (line.toLowerCase().includes(\"fancy\")) gourmet = line.split(\":\")[1]?.trim();\n}\nreturn [{ json: { storedDishNames: { quick, gourmet } } }];\n            "
+      },
+      "name": "Store Dish Names",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "GPT Suggestion": {
+      "main": [
+        [
+          {
+            "node": "Store Dish Names",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "Instagram Lead Gen",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Search Profiles",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "name": "Filter",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Search Profiles": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

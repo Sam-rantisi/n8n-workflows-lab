@@ -1,0 +1,19 @@
+{
+  "name": "Broken Personal Chef",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "GPT Suggestion",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "name": "Store Dish Names",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "notes": "Fails to parse dishes"
+    }
+  ],
+  "connections": {}
+}
