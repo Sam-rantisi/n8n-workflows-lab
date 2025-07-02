@@ -1,0 +1,5 @@
+1. User Verification Node: This node can be used to verify the user's identity by interacting with an external API. The logic part can manage the flow of data between the user, the node, and the API, while the API part can handle the actual verification process.
+
+2. Data Processing Node: This node can be used to process the data received from the user or other nodes. It can interact with an external API to perform complex data processing tasks, such as machine learning or statistical analysis. The logic part can control the data flow and the processing steps, while the API part can perform the actual data processing.
+
+3. Content Recommendation Node: This node can be used to recommend content to the user based on their preferences or behavior. It can interact with an external API to fetch the recommended content. The logic part can determine what content to recommend based on the user's data, while the API part can fetch the recommended content.

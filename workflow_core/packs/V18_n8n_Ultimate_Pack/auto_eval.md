@@ -1,0 +1,1 @@
+Without any specific context, it's difficult to provide an accurate comparison between "V17" and "V18". Both of these could refer to versions of a software, model of a product, etc. Please provide more details.

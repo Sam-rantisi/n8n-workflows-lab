@@ -1,0 +1,137 @@
+{
+  "name": "Ultimate_Workflow_V18",
+  "nodes": [
+    {
+      "name": "Supabase Insert_v18",
+      "type": "supabase",
+      "parameters": {
+        "table": "events"
+      }
+    },
+    {
+      "name": "HTTP Request_v15_v16_v17_v18",
+      "type": "httpRequest",
+      "parameters": {
+        "url": "https://api.example.com/data"
+      }
+    },
+    {
+      "name": "HTTP Request",
+      "type": "httpRequest",
+      "parameters": {
+        "url": "https://api.example.com/data"
+      }
+    },
+    {
+      "name": "Supabase Insert_v15_v16_v17_v18",
+      "type": "supabase",
+      "parameters": {
+        "table": "events"
+      }
+    },
+    {
+      "name": "Set",
+      "type": "set",
+      "parameters": {
+        "fields": [
+          {
+            "name": "status",
+            "value": "processed"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Supabase Insert_v16_v17_v18",
+      "type": "supabase",
+      "parameters": {
+        "table": "events"
+      }
+    },
+    {
+      "name": "Supabase Insert_v17_v18",
+      "type": "supabase",
+      "parameters": {
+        "table": "events"
+      }
+    },
+    {
+      "name": "Start",
+      "type": "start",
+      "parameters": {}
+    },
+    {
+      "name": "Webhook",
+      "type": "webhook",
+      "parameters": {
+        "path": "v18-trigger"
+      }
+    },
+    {
+      "name": "Supabase Insert",
+      "type": "supabase",
+      "parameters": {
+        "table": "events"
+      }
+    },
+    {
+      "name": "HTTP Request_v18",
+      "type": "httpRequest",
+      "parameters": {
+        "url": "https://api.example.com/data"
+      }
+    },
+    {
+      "name": "HTTP Request_v16_v17_v18",
+      "type": "httpRequest",
+      "parameters": {
+        "url": "https://api.example.com/data"
+      }
+    },
+    {
+      "name": "HTTP Request_v17_v18",
+      "type": "httpRequest",
+      "parameters": {
+        "url": "https://api.example.com/data"
+      }
+    }
+  ],
+  "connections": {
+    "Supabase Insert_v18": [
+      "HTTP Request_v15_v16_v17_v18"
+    ],
+    "HTTP Request_v15_v16_v17_v18": [
+      "HTTP Request"
+    ],
+    "HTTP Request": [
+      "Supabase Insert_v15_v16_v17_v18"
+    ],
+    "Supabase Insert_v15_v16_v17_v18": [
+      "Set"
+    ],
+    "Set": [
+      "Supabase Insert_v16_v17_v18"
+    ],
+    "Supabase Insert_v16_v17_v18": [
+      "Supabase Insert_v17_v18"
+    ],
+    "Supabase Insert_v17_v18": [
+      "Start"
+    ],
+    "Start": [
+      "Webhook"
+    ],
+    "Webhook": [
+      "Supabase Insert"
+    ],
+    "Supabase Insert": [
+      "HTTP Request_v18"
+    ],
+    "HTTP Request_v18": [
+      "HTTP Request_v16_v17_v18"
+    ],
+    "HTTP Request_v16_v17_v18": [
+      "HTTP Request_v17_v18"
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+Without any specific context about the product or service you're asking about, it's impossible to provide an accurate comparison. V21 and V22 could refer to software versions, product models, or something else entirely. Please provide more information.
