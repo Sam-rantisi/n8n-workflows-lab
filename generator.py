@@ -64,16 +64,27 @@ def auto_unzip_packs():
                 print(f"⚠️ Invalid zip file: {fname}")
 
 def get_existing_versions():
-    return sorted([
-        d for d in os.listdir(PACKS_DIR)
-        if d.startswith("V") and os.path.isdir(os.path.join(PACKS_DIR, d))
-    ], key=lambda x: int(x[1:].split("_")[0]))
+    try:
+        res = supabase.storage.from_(STAGING_BUCKET).list()
+        version_nums = []
+        for item in res:
+            name = item['name']
+            if name.startswith("V") and "_n8n_Ultimate_Pack.zip" in name:
+                try:
+                    v = int(name.split("_")[0][1:])
+                    version_nums.append(v)
+                except:
+                    continue
+        return sorted(set(version_nums))
+    except Exception as e:
+        print(f"⚠️ Failed to fetch versions from Supabase: {e}")
+        return []
 
 def get_previous_workflow():
     versions = get_existing_versions()
     if not versions:
         return None
-    latest = versions[-1]
+    latest = f"V{versions[-1]}_n8n_Ultimate_Pack"
     path = os.path.join(PACKS_DIR, latest, "workflow.json")
     if os.path.exists(path):
         with open(path, "r") as f:
@@ -162,7 +173,7 @@ def write_and_zip(folder, files):
                 zipf.write(fp, os.path.relpath(fp, folder))
                 try:
                     safe_name = file.encode('ascii', 'ignore').decode()
-                    print(f"🔒 {safe_name}: {hash_file(fp)}")
+                    print(f"🔐 {safe_name}: {hash_file(fp)}")
                 except Exception as e:
                     print(f"⚠️ Skipping file with invalid name: {repr(file)}")
     return zip_path
@@ -174,18 +185,20 @@ def upload(zip_path, bucket):
     existing = supabase.storage.from_(bucket).list()
     if any(obj['name'] == file_name for obj in existing):
         print(f"⚠️ {file_name} already exists in {bucket}, skipping upload.")
-        return
+        return False
     with open(zip_path, "rb") as f:
         data = f.read()
     res = supabase.storage.from_(bucket).upload(file_name, data, {"content-type": "application/zip"})
     print(f"⬆️ Uploaded {file_name} to {bucket}: {res}")
+    return True
 
 def prune():
     packs = get_existing_versions()
     if len(packs) <= PRUNE_LIMIT:
         return
     to_delete = packs[:-PRUNE_LIMIT]
-    for folder in to_delete:
+    for v in to_delete:
+        folder = f"V{v}_n8n_Ultimate_Pack"
         try:
             shutil.rmtree(os.path.join(PACKS_DIR, folder))
             supabase.storage.from_(STAGING_BUCKET).remove([f"{folder}.zip"])
@@ -214,7 +227,7 @@ def update_ledger(version, score, hashval):
 def run():
     auto_unzip_packs()
     versions = get_existing_versions()
-    version = int(versions[-1][1:].split("_")[0]) + 1 if versions else 1
+    version = max(versions) + 1 if versions else 1
     folder = os.path.join(PACKS_DIR, f"V{version}_n8n_Ultimate_Pack")
     log_folder = os.path.join(LOGS_DIR, f"V{version}")
     os.makedirs(log_folder, exist_ok=True)
@@ -245,14 +258,14 @@ def run():
         files["auto_eval.md"] = gpt_generate(f"Compare V{version-1} to V{version}. Key improvements?")
 
     zip_path = write_and_zip(folder, files)
+    if not upload(zip_path, STAGING_BUCKET):
+        print(f"❌ Skipping update. Version V{version} already exists.")
+        return
+
     update_ledger(version, score, hash_file(zip_path))
 
-    if score >= SCORE_THRESHOLD:
-        upload(zip_path, STAGING_BUCKET)
-        if STAGING_BUCKET != PROD_BUCKET:
-            upload(zip_path, PROD_BUCKET)
-    else:
-        upload(zip_path, STAGING_BUCKET)
+    if STAGING_BUCKET != PROD_BUCKET:
+        upload(zip_path, PROD_BUCKET)
 
     prune()
     print(f"✅ V{version} complete. Logs, packs, and ledger updated.")
