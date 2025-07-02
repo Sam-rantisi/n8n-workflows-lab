@@ -3,7 +3,7 @@ import uuid
 import json
 import zipfile
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import openai
@@ -60,8 +60,6 @@ def auto_unzip_packs():
                     if any(item.startswith("V") and item.endswith("/") for item in contents):
                         print(f"📦 Extracting {fname}...")
                         zip_ref.extractall(PACKS_DIR)
-                # Optional: delete after extracting
-                # os.remove(zip_path)
             except zipfile.BadZipFile:
                 print(f"⚠️ Invalid zip file: {fname}")
 
@@ -200,7 +198,7 @@ def update_ledger(version, score, hashval):
         "version": version,
         "score": score,
         "hash": hashval,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
     if os.path.exists(VERSION_LEDGER):
         with open(VERSION_LEDGER, "r") as f:
