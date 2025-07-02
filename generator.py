@@ -201,10 +201,9 @@ def prune():
         folder = f"V{v}_n8n_Ultimate_Pack"
         try:
             shutil.rmtree(os.path.join(PACKS_DIR, folder))
-            supabase.storage.from_(STAGING_BUCKET).remove([f"{folder}.zip"])
-            print(f"🗑️ Pruned {folder}")
+            print(f"🗑️ Pruned local folder {folder}")
         except:
-            print(f"⚠️ Failed to prune {folder}")
+            print(f"⚠️ Failed to prune local folder: {folder}")
 
 def update_ledger(version, score, hashval):
     entry = {
@@ -226,8 +225,10 @@ def update_ledger(version, score, hashval):
 
 def run():
     auto_unzip_packs()
-    versions = get_existing_versions()
-    version = max(versions) + 1 if versions else 1
+    
+    # TEMPORARY override to force V22
+    version = 22
+    
     folder = os.path.join(PACKS_DIR, f"V{version}_n8n_Ultimate_Pack")
     log_folder = os.path.join(LOGS_DIR, f"V{version}")
     os.makedirs(log_folder, exist_ok=True)
