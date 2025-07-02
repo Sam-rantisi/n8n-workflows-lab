@@ -60,7 +60,8 @@ def auto_unzip_packs():
                     if any(item.startswith("V") and item.endswith("/") for item in contents):
                         print(f"📦 Extracting {fname}...")
                         zip_ref.extractall(PACKS_DIR)
-                        # os.remove(zip_path)  # Optional: delete zip after extracting
+                # Optional: delete after extracting
+                # os.remove(zip_path)
             except zipfile.BadZipFile:
                 print(f"⚠️ Invalid zip file: {fname}")
 
