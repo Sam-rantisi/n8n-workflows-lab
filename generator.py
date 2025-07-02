@@ -33,7 +33,7 @@ supabase: Client = create_client(url, key)
 
 openai.api_key = required_env_vars["OPENAI_API_KEY"]
 
-PACKS_DIR = "packs"
+PACKS_DIR = "workflow_core/packs"
 LOGS_DIR = "logs"
 MODE = os.getenv("GENERATOR_MODE", "enterprise")
 STAGING_BUCKET = os.getenv("STAGING_BUCKET", "workflowpacks")
