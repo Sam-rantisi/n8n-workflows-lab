@@ -14,12 +14,24 @@ import subprocess
 
 load_dotenv()
 
-# Supabase credentials
-url = os.getenv("SUPABASE_URL")
-key = os.getenv("SUPABASE_KEY")
+# ----- Fail-safe: Environment Validation -----
+required_env_vars = {
+    "SUPABASE_URL": os.getenv("SUPABASE_URL"),
+    "SUPABASE_SERVICE_KEY": os.getenv("SUPABASE_SERVICE_KEY"),
+    "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
+}
+
+missing_vars = [k for k, v in required_env_vars.items() if not v]
+if missing_vars:
+    print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
+    exit(1)
+
+# ----- Auth Setup -----
+url = required_env_vars["SUPABASE_URL"]
+key = required_env_vars["SUPABASE_SERVICE_KEY"]
 supabase: Client = create_client(url, key)
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = required_env_vars["OPENAI_API_KEY"]
 
 PACKS_DIR = "packs"
 LOGS_DIR = "logs"
@@ -248,4 +260,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-
