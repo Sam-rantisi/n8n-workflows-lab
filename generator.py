@@ -6,7 +6,7 @@ import hashlib
 from datetime import datetime, timezone
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from openai import OpenAI
+import openai
 import random
 import shutil
 import time
@@ -14,7 +14,6 @@ import subprocess
 
 load_dotenv()
 
-# ----- Fail-safe: Environment Validation -----
 required_env_vars = {
     "SUPABASE_URL": os.getenv("SUPABASE_URL"),
     "SUPABASE_SERVICE_KEY": os.getenv("SUPABASE_SERVICE_KEY"),
@@ -26,12 +25,11 @@ if missing_vars:
     print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
     exit(1)
 
-# ----- Auth Setup -----
 url = required_env_vars["SUPABASE_URL"]
 key = required_env_vars["SUPABASE_SERVICE_KEY"]
 supabase: Client = create_client(url, key)
 
-client = OpenAI(api_key=required_env_vars["OPENAI_API_KEY"])
+openai.api_key = required_env_vars["OPENAI_API_KEY"]
 
 PACKS_DIR = "workflow_core/packs"
 LOGS_DIR = "logs"
@@ -43,27 +41,42 @@ SCORE_THRESHOLD = 60
 
 VERSION_LEDGER = "versions.json"
 FEEDBACK_FILE = "feedback.json"
-
-# ----- Utility Functions -----
+PROMPT_HISTORY_FILE = "prompt_history.json"
+NODE_ANALYSIS_FILE = "node_analysis.json"
 
 def hash_file(file_path):
     with open(file_path, "rb") as f:
         return hashlib.sha256(f.read()).hexdigest()
 
-def auto_unzip_packs():
-    if not os.path.exists(PACKS_DIR):
-        os.makedirs(PACKS_DIR)
-    for fname in os.listdir(PACKS_DIR):
-        if fname.endswith(".zip"):
-            zip_path = os.path.join(PACKS_DIR, fname)
-            try:
-                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                    contents = zip_ref.namelist()
-                    if any(item.startswith("V") and item.endswith("/") for item in contents):
-                        print(f"📦 Extracting {fname}...")
-                        zip_ref.extractall(PACKS_DIR)
-            except zipfile.BadZipFile:
-                print(f"⚠️ Invalid zip file: {fname}")
+def load_json(path):
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_json(path, data):
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+
+def gpt_generate(prompt):
+    try:
+        res = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.6
+        )
+        return res["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        raise RuntimeError(f"❌ GPT generation failed: {e}")
+
+def llm_score_workflow(workflow):
+    prompt = f"Score this n8n workflow from 0-100 for enterprise-readiness: {json.dumps(workflow)}"
+    try:
+        result = gpt_generate(prompt)
+        digits = [int(s) for s in result.split() if s.isdigit() and 0 <= int(s) <= 100]
+        return max(digits) if digits else 50
+    except:
+        return 50
 
 def get_existing_versions():
     try:
@@ -82,40 +95,60 @@ def get_existing_versions():
         print(f"⚠️ Failed to fetch versions from Supabase: {e}")
         return []
 
-def get_previous_workflow():
+def summarize_previous_versions():
+    summaries = []
     versions = get_existing_versions()
-    if not versions:
-        return None
-    latest = f"V{versions[-1]}_n8n_Ultimate_Pack"
-    path = os.path.join(PACKS_DIR, latest, "workflow.json")
-    if os.path.exists(path):
-        with open(path, "r") as f:
-            return json.load(f)
-    return None
+    for v in versions[-3:]:
+        path = os.path.join(PACKS_DIR, f"V{v}_n8n_Ultimate_Pack", "workflow.json")
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                data = json.load(f)
+                summaries.append(f"V{v}: {len(data['nodes'])} nodes, types: {[n['type'] for n in data['nodes']]}")
+    return "\n".join(summaries)
 
-def load_feedback():
-    path = os.path.join(PACKS_DIR, FEEDBACK_FILE)
-    if os.path.exists(path):
-        with open(path, "r") as f:
-            return json.load(f)
-    return {}
+def extract_node_patterns(workflow):
+    node_types = [n['type'] for n in workflow.get('nodes', [])]
+    return {
+        "total_nodes": len(node_types),
+        "node_distribution": {t: node_types.count(t) for t in set(node_types)}
+    }
 
-def gpt_generate(prompt):
-    try:
-        res = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.6
-        )
-        return res.choices[0].message.content.strip()
-    except Exception as e:
-        raise RuntimeError(f"❌ GPT generation failed: {e}")
-
-# ----- Core Generation -----
+def shape_prompt(version):
+    feedback = load_json(os.path.join(PACKS_DIR, FEEDBACK_FILE))
+    prompt_history = load_json(PROMPT_HISTORY_FILE)
+    node_patterns = load_json(NODE_ANALYSIS_FILE)
+    prev_summary = summarize_previous_versions()
+    recent_prompts = "\n---\n".join(prompt_history[-3:] if isinstance(prompt_history, list) else [])
+    return f"""
+Build the smartest possible enterprise n8n workflow automation pack.
+Version: V{version}
+Previous Structure:
+{prev_summary}
+High-Value Feedback:
+{json.dumps(feedback, indent=2)}
+Prompt Memory:
+{recent_prompts}
+Node Patterns:
+{json.dumps(node_patterns, indent=2)}
+Ensure advanced error handling, smart retries, DAG intelligence, multi-API sync, and flow resilience.
+"""
 
 def generate_workflow(version):
-    prev = get_previous_workflow()
-    feedback = load_feedback()
+    prompt = shape_prompt(version)
+    try:
+        raw_json = gpt_generate(f"Generate full n8n workflow.json based on this prompt:\n{prompt}")
+        workflow = json.loads(raw_json)
+        prompt_history = load_json(PROMPT_HISTORY_FILE)
+        prompt_history.append(prompt)
+        save_json(PROMPT_HISTORY_FILE, prompt_history[-10:])
+        pattern = extract_node_patterns(workflow)
+        save_json(NODE_ANALYSIS_FILE, pattern)
+        return workflow
+    except:
+        print("⚠️ GPT returned non-JSON. Fallback logic activated.")
+        return fallback_workflow(version)
+
+def fallback_workflow(version):
     base_nodes = [
         {"name": "Start", "type": "start", "parameters": {}},
         {"name": "Webhook", "type": "webhook", "parameters": {"path": f"v{version}-trigger"}},
@@ -123,16 +156,6 @@ def generate_workflow(version):
         {"name": "Set", "type": "set", "parameters": {"fields": [{"name": "status", "value": "processed"}]}},
         {"name": "Supabase Insert", "type": "supabase", "parameters": {"table": "events"}}
     ]
-
-    if prev:
-        prev_nodes = prev.get("nodes", [])
-        good_nodes = [n for n in prev_nodes if n["type"] in ["httpRequest", "supabase"]]
-        for node in good_nodes:
-            node_copy = dict(node)
-            node_copy["name"] += f"_v{version}"
-            base_nodes.append(node_copy)
-
-    random.shuffle(base_nodes)
     return {
         "name": f"Ultimate_Workflow_V{version}",
         "nodes": base_nodes,
@@ -142,14 +165,13 @@ def generate_workflow(version):
     }
 
 def score_workflow(workflow):
-    types = [n["type"] for n in workflow["nodes"]]
-    score = len(types) * 10
-    if "httpRequest" in types: score += 20
-    if "supabase" in types: score += 15
-    if "webhook" in types: score += 10
-    return min(score, 100)
-
-# ----- Filesystem and Validation -----
+    heuristic = len(workflow["nodes"]) * 10
+    if any(n['type'] == "httpRequest" for n in workflow['nodes']): heuristic += 20
+    if any(n['type'] == "supabase" for n in workflow['nodes']): heuristic += 15
+    if any(n['type'] == "webhook" for n in workflow['nodes']): heuristic += 10
+    heuristic = min(heuristic, 100)
+    llm_score = llm_score_workflow(workflow)
+    return int((heuristic + llm_score) / 2)
 
 def simulate_workflow_logic(workflow):
     required_keys = ["name", "nodes", "connections"]
@@ -172,14 +194,7 @@ def write_and_zip(folder, files):
             for file in files:
                 fp = os.path.join(root, file)
                 zipf.write(fp, os.path.relpath(fp, folder))
-                try:
-                    safe_name = file.encode('ascii', 'ignore').decode()
-                    print(f"🔐 {safe_name}: {hash_file(fp)}")
-                except Exception as e:
-                    print(f"⚠️ Skipping file with invalid name: {repr(file)}")
     return zip_path
-
-# ----- Upload & Housekeeping -----
 
 def upload(zip_path, bucket):
     file_name = os.path.basename(zip_path)
@@ -222,10 +237,7 @@ def update_ledger(version, score, hashval):
     with open(VERSION_LEDGER, "w") as f:
         json.dump(data, f, indent=2)
 
-# ----- Orchestration -----
-
 def run():
-    auto_unzip_packs()
     versions = get_existing_versions()
     version = max(versions) + 1 if versions else 1
 
@@ -241,7 +253,7 @@ def run():
     winner = wf1 if score_workflow(wf1) >= score_workflow(wf2) else wf2
     score = score_workflow(winner)
     critique = gpt_generate(f"Critique this n8n workflow: {json.dumps(winner)}")
-    feedback_injection = json.dumps(load_feedback(), indent=2)
+    feedback_injection = json.dumps(load_json(os.path.join(PACKS_DIR, FEEDBACK_FILE)), indent=2)
     self_prompt = gpt_generate(f"Given this critique, what should V{version+1}'s prompt be? {critique}")
 
     files = {
@@ -264,10 +276,8 @@ def run():
         return
 
     update_ledger(version, score, hash_file(zip_path))
-
     if STAGING_BUCKET != PROD_BUCKET:
         upload(zip_path, PROD_BUCKET)
-
     prune()
     print(f"✅ V{version} complete. Logs, packs, and ledger updated.")
 
