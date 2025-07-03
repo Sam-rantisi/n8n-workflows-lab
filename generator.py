@@ -25,11 +25,10 @@ if missing_vars:
     print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
     exit(1)
 
+client = openai.OpenAI()
 url = required_env_vars["SUPABASE_URL"]
 key = required_env_vars["SUPABASE_SERVICE_KEY"]
 supabase: Client = create_client(url, key)
-
-openai.api_key = required_env_vars["OPENAI_API_KEY"]
 
 PACKS_DIR = "workflow_core/packs"
 LOGS_DIR = "logs"
@@ -43,6 +42,7 @@ VERSION_LEDGER = "versions.json"
 FEEDBACK_FILE = "feedback.json"
 PROMPT_HISTORY_FILE = "prompt_history.json"
 NODE_ANALYSIS_FILE = "node_analysis.json"
+
 
 def hash_file(file_path):
     with open(file_path, "rb") as f:
@@ -60,12 +60,12 @@ def save_json(path, data):
 
 def gpt_generate(prompt):
     try:
-        res = openai.ChatCompletion.create(
+        res = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.6
         )
-        return res["choices"][0]["message"]["content"].strip()
+        return res.choices[0].message.content.strip()
     except Exception as e:
         raise RuntimeError(f"❌ GPT generation failed: {e}")
 
