@@ -6,7 +6,7 @@ import hashlib
 from datetime import datetime, timezone
 from supabase import create_client, Client
 from dotenv import load_dotenv
-import openai
+from openai import OpenAI
 import random
 import shutil
 import time
@@ -31,7 +31,7 @@ url = required_env_vars["SUPABASE_URL"]
 key = required_env_vars["SUPABASE_SERVICE_KEY"]
 supabase: Client = create_client(url, key)
 
-openai.api_key = required_env_vars["OPENAI_API_KEY"]
+client = OpenAI(api_key=required_env_vars["OPENAI_API_KEY"])
 
 PACKS_DIR = "workflow_core/packs"
 LOGS_DIR = "logs"
@@ -100,15 +100,14 @@ def load_feedback():
 
 def gpt_generate(prompt):
     try:
-        res = openai.ChatCompletion.create(
+        res = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.6
         )
         return res.choices[0].message.content.strip()
     except Exception as e:
-        print(f"⚠️ GPT error: {e}")
-        return "[GPT error]"
+        raise RuntimeError(f"❌ GPT generation failed: {e}")
 
 # ----- Core Generation -----
 
