@@ -6,7 +6,7 @@ import hashlib
 from datetime import datetime, timezone
 from supabase import create_client, Client
 from dotenv import load_dotenv
-import openai
+from openai import OpenAI
 import random
 import shutil
 import time
@@ -25,10 +25,11 @@ if missing_vars:
     print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
     exit(1)
 
-client = openai.OpenAI()
 url = required_env_vars["SUPABASE_URL"]
 key = required_env_vars["SUPABASE_SERVICE_KEY"]
 supabase: Client = create_client(url, key)
+
+client = OpenAI()
 
 PACKS_DIR = "workflow_core/packs"
 LOGS_DIR = "logs"
@@ -42,7 +43,6 @@ VERSION_LEDGER = "versions.json"
 FEEDBACK_FILE = "feedback.json"
 PROMPT_HISTORY_FILE = "prompt_history.json"
 NODE_ANALYSIS_FILE = "node_analysis.json"
-
 
 def hash_file(file_path):
     with open(file_path, "rb") as f:
@@ -187,7 +187,6 @@ def write_and_zip(folder, files):
     for name, content in files.items():
         with open(os.path.join(folder, name), "w") as f:
             f.write(content if isinstance(content, str) else json.dumps(content, indent=2))
-
     zip_path = f"{folder}.zip"
     with zipfile.ZipFile(zip_path, 'w') as zipf:
         for root, _, files in os.walk(folder):
@@ -240,7 +239,6 @@ def update_ledger(version, score, hashval):
 def run():
     versions = get_existing_versions()
     version = max(versions) + 1 if versions else 1
-
     folder = os.path.join(PACKS_DIR, f"V{version}_n8n_Ultimate_Pack")
     log_folder = os.path.join(LOGS_DIR, f"V{version}")
     os.makedirs(log_folder, exist_ok=True)
