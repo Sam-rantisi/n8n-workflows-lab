@@ -225,10 +225,9 @@ def update_ledger(version, score, hashval):
 
 def run():
     auto_unzip_packs()
-    
-    # TEMPORARY override to force V22
-    version = 22
-    
+    versions = get_existing_versions()
+    version = max(versions) + 1 if versions else 1
+
     folder = os.path.join(PACKS_DIR, f"V{version}_n8n_Ultimate_Pack")
     log_folder = os.path.join(LOGS_DIR, f"V{version}")
     os.makedirs(log_folder, exist_ok=True)
