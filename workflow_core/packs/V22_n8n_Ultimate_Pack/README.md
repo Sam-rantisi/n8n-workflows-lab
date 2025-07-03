@@ -1,5 +1,0 @@
-V22 of an enterprise n8n automation workflow pack refers to the 22nd version of a specific workflow automation package offered by n8n for enterprises. This version would include various improvements, bug fixes, and new features compared to previous versions.
-
-n8n is an extendable workflow automation tool that enables you to connect anything to everything via its open, fair-code model. The workflows can be run either with an on-premise or cloud solution, providing flexibility for enterprises. The specific features and improvements of V22 would depend on the changes made by n8n developers in this version.
-
-However, please note that as an AI model, I was last trained on new data in October 2021, and as of that time, there's no specific information available about a "V22 of an enterprise n8n automation workflow pack". For the most accurate and up-to-date information, please refer to the official n8n resources or directly contact their support.

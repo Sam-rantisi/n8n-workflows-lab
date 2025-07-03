@@ -1,1 +1,0 @@
-As an AI, I need more context to provide a specific comparison. The identifiers "V13" and "V14" could refer to many things such as software versions, models of vehicles, or even product lines. If you could provide more details, I would be able to give a more accurate comparison.

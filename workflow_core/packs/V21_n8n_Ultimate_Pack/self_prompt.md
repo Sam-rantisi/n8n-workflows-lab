@@ -1,3 +1,0 @@
-Based on the feedback, the prompt for V22 should be:
-
-"Design a workflow that is efficient, readable, and maintainable. Ensure that your node names are meaningful and descriptive of the function or data they handle. Remove duplicate nodes and combine similar actions where possible for efficiency. Map the necessary data from the HTTP Request nodes to the Supabase Insert nodes for insertion into the 'events' table. Clearly define the function of the webhook node in its configuration. Connect all nodes in the workflow to prevent data loss or unexpected behavior and ensure a clear flow from start to finish. Lastly, include error handling nodes to manage possible errors or exceptions during workflow execution."

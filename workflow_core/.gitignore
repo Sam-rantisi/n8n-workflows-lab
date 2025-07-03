@@ -1,6 +1,5 @@
 # Ignore everything except packs folder content
 .env
-logs/
 *.pyc
 __pycache__/
 
@@ -10,3 +9,4 @@ __pycache__/
 !/packs/**/*.md
 !/packs/**/*.txt
 !/packs/**/*.json
+!logs/ledger.json

@@ -1,1 +1,0 @@
-Without any specific context or product, it's impossible to provide a comparison between "V12" and "V13". These could refer to versions of a software, model of a car or any number of things. Please provide more details.

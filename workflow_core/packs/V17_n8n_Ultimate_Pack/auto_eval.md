@@ -1,1 +1,0 @@
-Without any context, it's hard to provide an accurate comparison between "V16" and "V17". These could refer to versions of software, engines, models of cars, etc. Please provide more details.

@@ -51,6 +51,8 @@ def hash_file(file_path):
         return hashlib.sha256(f.read()).hexdigest()
 
 def auto_unzip_packs():
+    if not os.path.exists(PACKS_DIR):
+        os.makedirs(PACKS_DIR)
     for fname in os.listdir(PACKS_DIR):
         if fname.endswith(".zip"):
             zip_path = os.path.join(PACKS_DIR, fname)
